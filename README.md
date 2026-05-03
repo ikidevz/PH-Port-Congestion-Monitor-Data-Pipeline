@@ -38,14 +38,30 @@ Built on two principles: **80/20** (biggest impact, least code) and **Unix philo
 
 ## Ports modelled
 
-| Code | Port                           | Berths |
-| ---- | ------------------------------ | ------ |
-| MNL  | Port of Manila (MNPP)          | 18     |
-| CEB  | Cebu International Port        | 10     |
-| DVO  | Sasa Port, Davao               | 6      |
-| ILO  | Iloilo Commercial Port Complex | 5      |
-| GEN  | General Santos Fishport        | 4      |
-| ZAM  | Zamboanga Port                 | 4      |
+| Code | Port                                                | Berths |
+| ---- | --------------------------------------------------- | ------ |
+| MNL  | Port of Manila (MICT / South Harbor / North Harbor) | 22     |
+| CEB  | Cebu International Port                             | 5      |
+| DVO  | Sasa Port Davao                                     | 7      |
+| ILO  | Iloilo Commercial Port Complex                      | 5      |
+| GEN  | General Santos Fishport Complex (Makar Wharf)       | 6      |
+| ZAM  | Zamboanga Port                                      | 4      |
+| BTG  | Batangas International Port                         | 8      |
+| CGY  | Port of Cagayan de Oro (Macabalan)                  | 7      |
+| SUB  | Subic Bay Port and Freeport Zone                    | 25     |
+| TAC  | Port of Tacloban                                    | 4      |
+| OZA  | Port of Ozamiz                                      | 3      |
+| ILG  | Port of Iligan                                      | 5      |
+| PAG  | Port of Pagadian                                    | 3      |
+| CBO  | Port of Cotabato                                    | 4      |
+| DIP  | Port of Dipolog                                     | 3      |
+| TAG  | Port of Tagbilaran                                  | 4      |
+| TAC2 | Port of Catbalogan                                  | 3      |
+| SUG  | Port of Surigao                                     | 4      |
+| BUT  | Port of Butuan (Masao)                              | 3      |
+| LBP  | Port of Legazpi                                     | 4      |
+| ROM  | Port of Romblon                                     | 2      |
+| MAS  | Port of Masbate                                     | 3      |
 
 ---
 

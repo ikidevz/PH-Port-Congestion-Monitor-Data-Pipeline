@@ -1,10 +1,10 @@
 import os
+import pendulum
 from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.providers.standard.operators.bash import BashOperator
-from airflow.utils.dates import days_ago
 
 from src.ingestion.generator import generate_batch
 from src.alerting.alert import run as alert_run
@@ -25,7 +25,7 @@ with DAG(
     dag_id="port_pipeline",
     description="PH Port Congestion Monitor — ingest → dbt → alert (every 15 min)",
     schedule_interval="*/15 * * * *",
-    start_date=days_ago(1),
+    start_date=pendulum.today('UTC').add(days=-1),
     catchup=False,
     default_args=DEFAULT_ARGS,
     tags=["port-monitor", "dbt", "real-time"],

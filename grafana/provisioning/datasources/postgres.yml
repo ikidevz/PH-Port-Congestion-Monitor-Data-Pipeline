@@ -4,10 +4,10 @@ datasources:
   - name: PostgreSQL
     type: postgres
     url: postgres:5432
-    database: port_monitor
-    user: postgres
+    database: ph_port_monitor
+    user: port_monitoring_user
     secureJsonData:
-      password: postgres
+      password: port_monitoring_password
     jsonData:
       sslmode: disable
       postgresVersion: 1600
