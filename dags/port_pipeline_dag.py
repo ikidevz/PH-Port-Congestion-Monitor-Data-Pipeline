@@ -1,6 +1,4 @@
 import os
-import pendulum
-from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
@@ -24,12 +22,10 @@ DEFAULT_ARGS = {
 with DAG(
     dag_id="port_pipeline",
     description="PH Port Congestion Monitor — ingest → dbt → alert (every 15 min)",
-    schedule_interval="*/15 * * * *",
-    start_date=pendulum.today('UTC').add(days=-1),
+    schedule="*/15 * * * *",
     catchup=False,
     default_args=DEFAULT_ARGS,
     tags=["port-monitor", "dbt", "real-time"],
-    max_active_runs=1,
 ) as dag:
 
     t_generate = PythonOperator(
@@ -48,6 +44,7 @@ with DAG(
         task_id="dbt_run",
         bash_command="""
             cd /opt/airflow/dbt && \
+            dbt deps && \
             dbt run \
                 --profiles-dir . \
                 --select staging+ marts+ \
