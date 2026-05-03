@@ -4,6 +4,8 @@
 
 ---
 
+![IMG](https://tdhghaslnufgtzjybhhf.supabase.co/storage/v1/object/public/content/Data%20Engineering/PH-Port-Congestion-Monitor/archtecture_sketch.png)
+
 ## What this is
 
 A batch + real-time data engineering pipeline that simulates and processes vessel arrival/departure events across six major Philippine ports. It computes per-port congestion scores every hour, surfaces them in Grafana, and fires alerts when thresholds are breached.
