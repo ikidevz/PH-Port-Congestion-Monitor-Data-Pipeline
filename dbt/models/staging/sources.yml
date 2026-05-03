@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: vessel_events
+        description: "Source-of-truth vessel events. Append-only."
+        columns:
+          - name: event_id
+            description: "Primary key (UUID)"
+            tests:
+              - unique
+              - not_null
+          - name: event_type
+            tests:
+              - accepted_values:
+                  values: ['ARRIVAL', 'DEPARTURE']
+          - name: cargo_type
+            tests:
+              - accepted_values:
+                  values: ['CONTAINER', 'RORO', 'BULK', 'TANKER', 'PASSENGER', 'GENERAL']
+          - name: port_code
+            tests:
+              - not_null
+              - relationships:
+                  to: source('raw', 'ports')
+                  field: port_code
+
+      - name: ports
+        description: "Port reference dimension."
+        columns:
+          - name: port_code
+            tests:
+              - unique
+              - not_null

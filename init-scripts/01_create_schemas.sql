@@ -1,0 +1,13 @@
+CREATE DATABASE ph_port_monitor;
+
+\c ph_port_monitor
+
+CREATE SCHEMA IF NOT EXISTS raw;
+CREATE SCHEMA IF NOT EXISTS staging;
+CREATE SCHEMA IF NOT EXISTS marts;
+
+ALTER DATABASE ph_port_monitor SET search_path TO raw, staging, marts, public;
+
+ALTER SCHEMA raw OWNER TO CURRENT_USER;
+ALTER SCHEMA staging OWNER TO CURRENT_USER;
+ALTER SCHEMA marts OWNER TO CURRENT_USER;

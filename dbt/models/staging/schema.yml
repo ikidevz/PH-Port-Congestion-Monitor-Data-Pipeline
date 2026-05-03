@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_vessel_events
+    description: "Cleaned vessel events with derived date/hour/peak-hour fields."
+    columns:
+      - name: event_id
+        description: "Primary key (UUID from raw)"
+        tests:
+          - unique
+          - not_null
+      - name: port_code
+        tests:
+          - not_null
+          - relationships:
+              to: source('raw', 'ports')
+              field: port_code
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['ARRIVAL', 'DEPARTURE']
+      - name: cargo_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CONTAINER', 'RORO', 'BULK', 'TANKER', 'PASSENGER', 'GENERAL']
+      - name: event_hour
+        description: "0–23 in PH local time (PHT = UTC+8)"
+        tests:
+          - not_null
+      - name: is_peak_hour
+        description: "TRUE if event_hour between 06 and 20 PHT"
+        tests:
+          - not_null
+      - name: gross_tonnage
+        tests:
+          - not_null
+      - name: expected_duration_hrs
+        tests:
+          - not_null

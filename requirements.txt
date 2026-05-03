@@ -1,0 +1,3 @@
+dbt-postgres
+pymysql
+python-dotenv

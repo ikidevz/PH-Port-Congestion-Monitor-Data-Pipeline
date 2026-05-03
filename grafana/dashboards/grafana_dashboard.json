@@ -1,0 +1,496 @@
+{
+	"__inputs": [],
+	"__requires": [
+		{
+			"type": "grafana",
+			"id": "grafana",
+			"name": "Grafana",
+			"version": "10.0.0"
+		},
+		{
+			"type": "datasource",
+			"id": "postgres",
+			"name": "PostgreSQL",
+			"version": "1.0.0"
+		}
+	],
+	"annotations": { "list": [] },
+	"description": "PH Port Congestion Monitor — real-time vessel traffic dashboard",
+	"editable": true,
+	"fiscalYearStartMonth": 0,
+	"graphTooltip": 1,
+	"id": null,
+	"links": [],
+	"panels": [
+		{
+			"collapsed": false,
+			"gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+			"id": 100,
+			"title": "🚢 Real-Time Port Status",
+			"type": "row"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": {
+				"defaults": {
+					"color": { "mode": "thresholds" },
+					"mappings": [
+						{
+							"options": { "LOW": { "color": "green", "index": 0 } },
+							"type": "value"
+						},
+						{
+							"options": { "MODERATE": { "color": "yellow", "index": 1 } },
+							"type": "value"
+						},
+						{
+							"options": { "HIGH": { "color": "orange", "index": 2 } },
+							"type": "value"
+						},
+						{
+							"options": { "CRITICAL": { "color": "red", "index": 3 } },
+							"type": "value"
+						}
+					],
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 40 },
+							{ "color": "orange", "value": 60 },
+							{ "color": "red", "value": 80 }
+						]
+					},
+					"unit": "short"
+				}
+			},
+			"gridPos": { "h": 4, "w": 16, "x": 0, "y": 1 },
+			"id": 1,
+			"options": {
+				"colorMode": "background",
+				"graphMode": "none",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "/^congestion_level$/",
+					"values": false
+				},
+				"textMode": "auto"
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT port_code || ' — ' || congestion_level AS metric, congestion_score AS value FROM marts.congestion_scores WHERE score_hour = date_trunc('hour', NOW()) ORDER BY congestion_score DESC;",
+					"refId": "A"
+				}
+			],
+			"title": "Port Congestion — Current Hour",
+			"type": "stat"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": {
+				"defaults": {
+					"color": { "mode": "thresholds" },
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "red", "value": 1 }
+						]
+					},
+					"unit": "short"
+				}
+			},
+			"gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+			"id": 2,
+			"options": {
+				"colorMode": "background",
+				"graphMode": "none",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "",
+					"values": false
+				}
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"rawSql": "SELECT COUNT(*) AS \"Unresolved Alerts\" FROM marts.alert_log WHERE notified = FALSE;",
+					"refId": "A"
+				}
+			],
+			"title": "🚨 Unresolved Alerts",
+			"type": "stat"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": {
+				"defaults": {
+					"color": { "mode": "thresholds" },
+					"max": 100,
+					"min": 0,
+					"unit": "percent",
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 70 },
+							{ "color": "red", "value": 90 }
+						]
+					}
+				}
+			},
+			"gridPos": { "h": 5, "w": 12, "x": 0, "y": 5 },
+			"id": 3,
+			"options": {
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "/^berth_utilisation_pct$/",
+					"values": false
+				},
+				"showThresholdLabels": false,
+				"showThresholdMarkers": true
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT p.port_name AS metric, cs.berth_utilisation_pct AS value FROM marts.congestion_scores cs JOIN raw.ports p USING (port_code) WHERE cs.score_hour = date_trunc('hour', NOW()) ORDER BY cs.berth_utilisation_pct DESC;",
+					"refId": "A"
+				}
+			],
+			"title": "Berth Utilisation % — Current Hour",
+			"type": "gauge"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "custom": { "align": "auto" } } },
+			"gridPos": { "h": 5, "w": 12, "x": 12, "y": 5 },
+			"id": 4,
+			"options": {
+				"footer": { "show": false },
+				"showHeader": true,
+				"sortBy": [{ "desc": true, "displayName": "Hours in Port" }]
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT port_code, vessel_name, berth_id, cargo_type, ROUND(EXTRACT(EPOCH FROM (NOW()-arrived_at))/3600,1) AS \"Hours in Port\", expected_duration_hrs AS \"Expected Hrs\", ROUND(EXTRACT(EPOCH FROM (NOW()-arrived_at))/3600 - expected_duration_hrs,1) AS \"Delay Hrs\" FROM marts.vessel_turnaround WHERE departed_at IS NULL ORDER BY arrived_at ASC LIMIT 20;",
+					"refId": "A"
+				}
+			],
+			"title": "Active Vessels in Port",
+			"type": "table"
+		},
+
+		{
+			"collapsed": false,
+			"gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+			"id": 101,
+			"title": "📊 KPIs — Today",
+			"type": "row"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"decimals": 1,
+					"color": { "mode": "thresholds" },
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 40 },
+							{ "color": "red", "value": 70 }
+						]
+					}
+				}
+			},
+			"gridPos": { "h": 3, "w": 6, "x": 0, "y": 11 },
+			"id": 5,
+			"options": {
+				"colorMode": "background",
+				"graphMode": "area",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "/^avg_congestion_score$/"
+				}
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"rawSql": "SELECT ROUND(AVG(congestion_score),1) AS avg_congestion_score FROM marts.congestion_scores WHERE score_hour >= date_trunc('day', NOW());",
+					"refId": "A"
+				}
+			],
+			"title": "Avg Congestion Score Today",
+			"type": "stat"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "unit": "short" } },
+			"gridPos": { "h": 3, "w": 6, "x": 6, "y": 11 },
+			"id": 6,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "area",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "/^total_movements$/"
+				}
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"rawSql": "SELECT COUNT(*) AS total_movements FROM raw.vessel_events WHERE event_timestamp >= date_trunc('day', NOW());",
+					"refId": "A"
+				}
+			],
+			"title": "Total Vessel Movements Today",
+			"type": "stat"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "unit": "h", "decimals": 1 } },
+			"gridPos": { "h": 3, "w": 6, "x": 12, "y": 11 },
+			"id": 7,
+			"options": {
+				"colorMode": "value",
+				"graphMode": "none",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "/^avg_delay_hrs$/"
+				}
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"rawSql": "SELECT ROUND(AVG(delay_hrs),2) AS avg_delay_hrs FROM marts.vessel_turnaround WHERE arrived_at >= date_trunc('day', NOW()) AND departed_at IS NOT NULL AND is_delayed = TRUE;",
+					"refId": "A"
+				}
+			],
+			"title": "Avg Delay (delayed vessels)",
+			"type": "stat"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"decimals": 1,
+					"color": { "mode": "thresholds" },
+					"thresholds": {
+						"mode": "absolute",
+						"steps": [
+							{ "color": "green", "value": null },
+							{ "color": "yellow", "value": 30 },
+							{ "color": "red", "value": 60 }
+						]
+					}
+				}
+			},
+			"gridPos": { "h": 3, "w": 6, "x": 18, "y": 11 },
+			"id": 8,
+			"options": {
+				"colorMode": "background",
+				"graphMode": "none",
+				"reduceOptions": {
+					"calcs": ["lastNotNull"],
+					"fields": "/^delay_rate_pct$/"
+				}
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"rawSql": "SELECT ROUND(COUNT(*) FILTER (WHERE is_delayed)::NUMERIC / NULLIF(COUNT(*),0)*100,1) AS delay_rate_pct FROM marts.vessel_turnaround WHERE arrived_at >= date_trunc('day', NOW()) AND departed_at IS NOT NULL;",
+					"refId": "A"
+				}
+			],
+			"title": "Fleet Delay Rate Today",
+			"type": "stat"
+		},
+
+		{
+			"collapsed": false,
+			"gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+			"id": 102,
+			"title": "📈 Trends",
+			"type": "row"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": {
+				"defaults": {
+					"custom": { "lineWidth": 2, "fillOpacity": 10 },
+					"unit": "short",
+					"min": 0,
+					"max": 100
+				}
+			},
+			"gridPos": { "h": 8, "w": 14, "x": 0, "y": 15 },
+			"id": 9,
+			"options": {
+				"legend": {
+					"calcs": ["mean", "max"],
+					"displayMode": "table",
+					"placement": "bottom"
+				},
+				"tooltip": { "mode": "multi" }
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "time_series",
+					"rawSql": "SELECT score_hour AS time, port_code AS metric, congestion_score AS value FROM marts.congestion_scores WHERE score_hour >= NOW() - INTERVAL '24 hours' ORDER BY score_hour ASC;",
+					"refId": "A"
+				}
+			],
+			"title": "Congestion Score — 24h Trend by Port",
+			"type": "timeseries"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "unit": "short" } },
+			"gridPos": { "h": 8, "w": 10, "x": 14, "y": 15 },
+			"id": 10,
+			"options": {
+				"barRadius": 0.1,
+				"groupWidth": 0.7,
+				"legend": { "displayMode": "list", "placement": "bottom" },
+				"tooltip": { "mode": "multi" }
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT date_part('hour', event_timestamp)::INT AS hour_of_day, COUNT(*) FILTER (WHERE event_type='ARRIVAL') AS arrivals, COUNT(*) FILTER (WHERE event_type='DEPARTURE') AS departures FROM raw.vessel_events WHERE event_timestamp >= date_trunc('day', NOW()) GROUP BY hour_of_day ORDER BY hour_of_day;",
+					"refId": "A"
+				}
+			],
+			"title": "Hourly Arrivals vs Departures — Today",
+			"type": "barchart"
+		},
+
+		{
+			"collapsed": false,
+			"gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+			"id": 103,
+			"title": "🔍 7-Day Operational Summary",
+			"type": "row"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "unit": "short" } },
+			"gridPos": { "h": 7, "w": 12, "x": 0, "y": 24 },
+			"id": 11,
+			"options": {
+				"barRadius": 0.1,
+				"groupWidth": 0.7,
+				"legend": { "displayMode": "list", "placement": "bottom" },
+				"tooltip": { "mode": "multi" },
+				"xField": "port_name"
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT p.port_name, ROUND(AVG(cs.congestion_score),2) AS avg_score_7d, ROUND(MAX(cs.congestion_score),2) AS peak_score_7d FROM marts.congestion_scores cs JOIN raw.ports p USING (port_code) WHERE cs.score_hour >= NOW() - INTERVAL '7 days' GROUP BY p.port_name ORDER BY avg_score_7d DESC;",
+					"refId": "A"
+				}
+			],
+			"title": "Most Congested Ports — 7 Days",
+			"type": "barchart"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "custom": { "align": "auto" } } },
+			"gridPos": { "h": 7, "w": 12, "x": 12, "y": 24 },
+			"id": 12,
+			"options": {
+				"footer": { "show": false },
+				"showHeader": true,
+				"sortBy": [{ "desc": true, "displayName": "Delay Hrs" }]
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT vessel_name, port_code, cargo_type, ROUND(actual_duration_hrs,1) AS \"Actual Hrs\", ROUND(expected_duration_hrs,1) AS \"Expected Hrs\", ROUND(delay_hrs,1) AS \"Delay Hrs\", arrived_at::DATE AS \"Date\" FROM marts.vessel_turnaround WHERE arrived_at >= NOW() - INTERVAL '7 days' AND is_delayed = TRUE AND departed_at IS NOT NULL ORDER BY delay_hrs DESC LIMIT 15;",
+					"refId": "A"
+				}
+			],
+			"title": "Worst Delayed Vessels — 7 Days",
+			"type": "table"
+		},
+
+		{
+			"collapsed": false,
+			"gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+			"id": 104,
+			"title": "📋 Live Event Feed",
+			"type": "row"
+		},
+
+		{
+			"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+			"fieldConfig": { "defaults": { "custom": { "align": "auto" } } },
+			"gridPos": { "h": 7, "w": 24, "x": 0, "y": 32 },
+			"id": 13,
+			"options": {
+				"footer": { "show": false },
+				"showHeader": true,
+				"sortBy": [{ "desc": true, "displayName": "Timestamp" }]
+			},
+			"targets": [
+				{
+					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
+					"rawSql": "SELECT event_timestamp AS \"Timestamp\", port_code AS \"Port\", vessel_name AS \"Vessel\", event_type AS \"Type\", cargo_type AS \"Cargo\", berth_id AS \"Berth\", gross_tonnage AS \"GT\", expected_duration_hrs AS \"Exp Hrs\" FROM raw.vessel_events ORDER BY event_timestamp DESC LIMIT 50;",
+					"refId": "A"
+				}
+			],
+			"title": "Live Vessel Event Feed (last 50)",
+			"type": "table"
+		}
+	],
+
+	"refresh": "1m",
+	"schemaVersion": 38,
+	"tags": ["port-monitor", "philippine-ports", "vessel", "congestion"],
+	"templating": {
+		"list": [
+			{
+				"name": "port",
+				"type": "query",
+				"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+				"refresh": 1,
+				"query": "SELECT DISTINCT port_code FROM raw.ports ORDER BY port_code",
+				"multi": true,
+				"includeAll": true,
+				"allValue": "%",
+				"current": { "text": "All", "value": "$__all" }
+			}
+		]
+	},
+	"time": { "from": "now-24h", "to": "now" },
+	"timepicker": {},
+	"timezone": "Asia/Manila",
+	"title": "PH Port Congestion Monitor",
+	"uid": "ph-port-monitor-v1",
+	"version": 1
+}

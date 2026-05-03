@@ -1,0 +1,40 @@
+version: 2
+
+models:
+  - name: vessel_turnaround
+    description: "Per-vessel stay duration. Pairs ARRIVAL → DEPARTURE per IMO + port."
+    columns:
+      - name: turnaround_id
+        tests:
+          - unique
+          - not_null
+      - name: port_code
+        tests:
+          - not_null
+          - relationships:
+              to: source('raw', 'ports')
+              field: port_code
+      - name: imo_number
+        tests:
+          - not_null
+      - name: arrived_at
+        tests:
+          - not_null
+
+  - name: congestion_scores
+    description: "One row per port per hour. Primary analytics surface."
+    columns:
+      - name: score_id
+        tests:
+          - unique
+          - not_null
+      - name: port_code
+        tests:
+          - not_null
+      - name: congestion_score
+        tests:
+          - not_null
+      - name: congestion_level
+        tests:
+          - accepted_values:
+              values: ['LOW', 'MODERATE', 'HIGH', 'CRITICAL']
