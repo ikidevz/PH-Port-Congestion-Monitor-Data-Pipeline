@@ -1,3 +1,4 @@
+
 import os
 
 from airflow import DAG
@@ -6,6 +7,8 @@ from airflow.providers.standard.operators.bash import BashOperator
 
 from src.ingestion.generator import generate_batch
 from src.alerting.alert import run as alert_run
+
+from datetime import datetime
 
 
 def alert_check(**context):
@@ -17,6 +20,7 @@ DEFAULT_ARGS = {
     "depends_on_past": False,
     "email_on_failure": False,
     "email_on_retry": False,
+    "start_date": datetime(2026, 5, 1),
 }
 
 with DAG(
