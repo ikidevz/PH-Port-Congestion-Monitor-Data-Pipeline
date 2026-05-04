@@ -44,6 +44,12 @@ with DAG(
         """,
     )
 
+    t_dbt_deps = BashOperator(
+        task_id="dbt_deps",
+        bash_command="cd /opt/airflow/dbt && dbt deps --profiles-dir .",
+        env={**os.environ},
+    )
+
     t_dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command="""
@@ -55,12 +61,12 @@ with DAG(
                 --no-partial-parse
         """,
         env={
-            "PG_HOST": os.getenv("POSTGRES_HOST", "postgres"),
-            "PG_PORT": os.getenv("POSTGRES_PORT", "5432"),
-            "PG_DB":   os.getenv("PIPELINE_DB_NAME", "ph_port_monitor"),
-            "PG_USER": os.getenv("POSTGRES_USER", "port_monitoring_user"),
-            "PG_PASS": os.getenv("POSTGRES_PASSWORD", "port_monitoring_password"),
-            **os.environ,
+            **os.environ,   # ← FIRST so custom keys below override it
+            "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres"),
+            "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "PIPELINE_DB_NAME": os.getenv("PIPELINE_DB_NAME", "ph_port_monitor"),
+            "POSTGRES_USER": os.getenv("POSTGRES_USER", "port_monitoring_user"),
+            "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "port_monitoring_password"),
         },
         doc_md="Runs dbt staging → marts transform chain.",
     )
@@ -74,11 +80,11 @@ with DAG(
                 --select staging+ marts+
         """,
         env={
-            "PG_HOST": os.getenv("POSTGRES_HOST", "postgres"),
-            "PG_PORT": os.getenv("POSTGRES_PORT", "5432"),
-            "PG_DB":   os.getenv("PIPELINE_DB_NAME", "ph_port_monitor"),
-            "PG_USER": os.getenv("POSTGRES_USER", "port_monitoring_user"),
-            "PG_PASS": os.getenv("POSTGRES_PASSWORD", "port_monitoring_password"),
+            "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres"),
+            "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "PIPELINE_DB_NAME": os.getenv("PIPELINE_DB_NAME", "ph_port_monitor"),
+            "POSTGRES_USER": os.getenv("POSTGRES_USER", "port_monitoring_user"),
+            "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "port_monitoring_password"),
             **os.environ,
         },
         doc_md="Runs dbt schema tests (uniqueness, not_null, accepted_values, FK).",
@@ -93,4 +99,4 @@ with DAG(
         """,
     )
 
-    t_generate >> t_dbt_run >> t_dbt_test >> t_alert
+    t_generate >> t_dbt_deps >> t_dbt_run >> t_dbt_test >> t_alert

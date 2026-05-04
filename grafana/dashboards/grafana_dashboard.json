@@ -35,24 +35,6 @@
 			"fieldConfig": {
 				"defaults": {
 					"color": { "mode": "thresholds" },
-					"mappings": [
-						{
-							"options": { "LOW": { "color": "green", "index": 0 } },
-							"type": "value"
-						},
-						{
-							"options": { "MODERATE": { "color": "yellow", "index": 1 } },
-							"type": "value"
-						},
-						{
-							"options": { "HIGH": { "color": "orange", "index": 2 } },
-							"type": "value"
-						},
-						{
-							"options": { "CRITICAL": { "color": "red", "index": 3 } },
-							"type": "value"
-						}
-					],
 					"thresholds": {
 						"mode": "absolute",
 						"steps": [
@@ -62,7 +44,8 @@
 							{ "color": "red", "value": 80 }
 						]
 					},
-					"unit": "short"
+					"unit": "short",
+					"decimals": 1
 				}
 			},
 			"gridPos": { "h": 4, "w": 16, "x": 0, "y": 1 },
@@ -72,20 +55,20 @@
 				"graphMode": "none",
 				"reduceOptions": {
 					"calcs": ["lastNotNull"],
-					"fields": "/^congestion_level$/",
+					"fields": "/^congestion_score$/",
 					"values": false
 				},
-				"textMode": "auto"
+				"textMode": "value_and_name"
 			},
 			"targets": [
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
 					"format": "table",
-					"rawSql": "SELECT port_code || ' — ' || congestion_level AS metric, congestion_score AS value FROM marts.congestion_scores WHERE score_hour = date_trunc('hour', NOW()) ORDER BY congestion_score DESC;",
+					"rawSql": "SELECT port_code AS \"Port\", congestion_score, congestion_level FROM marts.congestion_scores WHERE score_hour = date_trunc('hour', NOW()) ORDER BY congestion_score DESC;",
 					"refId": "A"
 				}
 			],
-			"title": "Port Congestion — Current Hour",
+			"title": "Port Congestion Score — Current Hour",
 			"type": "stat"
 		},
 
@@ -118,6 +101,7 @@
 			"targets": [
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
 					"rawSql": "SELECT COUNT(*) AS \"Unresolved Alerts\" FROM marts.alert_log WHERE notified = FALSE;",
 					"refId": "A"
 				}
@@ -142,7 +126,8 @@
 							{ "color": "red", "value": 90 }
 						]
 					}
-				}
+				},
+				"overrides": []
 			},
 			"gridPos": { "h": 5, "w": 12, "x": 0, "y": 5 },
 			"id": 3,
@@ -159,7 +144,7 @@
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
 					"format": "table",
-					"rawSql": "SELECT p.port_name AS metric, cs.berth_utilisation_pct AS value FROM marts.congestion_scores cs JOIN raw.ports p USING (port_code) WHERE cs.score_hour = date_trunc('hour', NOW()) ORDER BY cs.berth_utilisation_pct DESC;",
+					"rawSql": "SELECT p.port_name, cs.berth_utilisation_pct FROM marts.congestion_scores cs JOIN raw.ports p USING (port_code) WHERE cs.score_hour = date_trunc('hour', NOW()) ORDER BY cs.berth_utilisation_pct DESC;",
 					"refId": "A"
 				}
 			],
@@ -181,7 +166,7 @@
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
 					"format": "table",
-					"rawSql": "SELECT port_code, vessel_name, berth_id, cargo_type, ROUND(EXTRACT(EPOCH FROM (NOW()-arrived_at))/3600,1) AS \"Hours in Port\", expected_duration_hrs AS \"Expected Hrs\", ROUND(EXTRACT(EPOCH FROM (NOW()-arrived_at))/3600 - expected_duration_hrs,1) AS \"Delay Hrs\" FROM marts.vessel_turnaround WHERE departed_at IS NULL ORDER BY arrived_at ASC LIMIT 20;",
+					"rawSql": "SELECT port_code AS \"Port\", vessel_name AS \"Vessel\", berth_id AS \"Berth\", cargo_type AS \"Cargo\", ROUND(EXTRACT(EPOCH FROM (NOW()-arrived_at))/3600,1) AS \"Hours in Port\", expected_duration_hrs AS \"Expected Hrs\", ROUND(EXTRACT(EPOCH FROM (NOW()-arrived_at))/3600 - expected_duration_hrs,1) AS \"Delay Hrs\" FROM marts.vessel_turnaround WHERE departed_at IS NULL ORDER BY arrived_at ASC LIMIT 20;",
 					"refId": "A"
 				}
 			],
@@ -221,12 +206,14 @@
 				"graphMode": "area",
 				"reduceOptions": {
 					"calcs": ["lastNotNull"],
-					"fields": "/^avg_congestion_score$/"
+					"fields": "/^avg_congestion_score$/",
+					"values": false
 				}
 			},
 			"targets": [
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
 					"rawSql": "SELECT ROUND(AVG(congestion_score),1) AS avg_congestion_score FROM marts.congestion_scores WHERE score_hour >= date_trunc('day', NOW());",
 					"refId": "A"
 				}
@@ -245,12 +232,14 @@
 				"graphMode": "area",
 				"reduceOptions": {
 					"calcs": ["lastNotNull"],
-					"fields": "/^total_movements$/"
+					"fields": "/^total_movements$/",
+					"values": false
 				}
 			},
 			"targets": [
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
 					"rawSql": "SELECT COUNT(*) AS total_movements FROM raw.vessel_events WHERE event_timestamp >= date_trunc('day', NOW());",
 					"refId": "A"
 				}
@@ -269,12 +258,14 @@
 				"graphMode": "none",
 				"reduceOptions": {
 					"calcs": ["lastNotNull"],
-					"fields": "/^avg_delay_hrs$/"
+					"fields": "/^avg_delay_hrs$/",
+					"values": false
 				}
 			},
 			"targets": [
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
 					"rawSql": "SELECT ROUND(AVG(delay_hrs),2) AS avg_delay_hrs FROM marts.vessel_turnaround WHERE arrived_at >= date_trunc('day', NOW()) AND departed_at IS NOT NULL AND is_delayed = TRUE;",
 					"refId": "A"
 				}
@@ -307,12 +298,14 @@
 				"graphMode": "none",
 				"reduceOptions": {
 					"calcs": ["lastNotNull"],
-					"fields": "/^delay_rate_pct$/"
+					"fields": "/^delay_rate_pct$/",
+					"values": false
 				}
 			},
 			"targets": [
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
+					"format": "table",
 					"rawSql": "SELECT ROUND(COUNT(*) FILTER (WHERE is_delayed)::NUMERIC / NULLIF(COUNT(*),0)*100,1) AS delay_rate_pct FROM marts.vessel_turnaround WHERE arrived_at >= date_trunc('day', NOW()) AND departed_at IS NOT NULL;",
 					"refId": "A"
 				}
@@ -353,7 +346,7 @@
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
 					"format": "time_series",
-					"rawSql": "SELECT score_hour AS time, port_code AS metric, congestion_score AS value FROM marts.congestion_scores WHERE score_hour >= NOW() - INTERVAL '24 hours' ORDER BY score_hour ASC;",
+					"rawSql": "SELECT score_hour AS \"time\", port_code AS metric, congestion_score AS value FROM marts.congestion_scores WHERE score_hour >= NOW() - INTERVAL '24 hours' ORDER BY score_hour ASC;",
 					"refId": "A"
 				}
 			],
@@ -369,6 +362,7 @@
 			"options": {
 				"barRadius": 0.1,
 				"groupWidth": 0.7,
+				"xField": "hour_of_day",
 				"legend": { "displayMode": "list", "placement": "bottom" },
 				"tooltip": { "mode": "multi" }
 			},
@@ -376,7 +370,7 @@
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
 					"format": "table",
-					"rawSql": "SELECT date_part('hour', event_timestamp)::INT AS hour_of_day, COUNT(*) FILTER (WHERE event_type='ARRIVAL') AS arrivals, COUNT(*) FILTER (WHERE event_type='DEPARTURE') AS departures FROM raw.vessel_events WHERE event_timestamp >= date_trunc('day', NOW()) GROUP BY hour_of_day ORDER BY hour_of_day;",
+					"rawSql": "SELECT LPAD(date_part('hour', event_timestamp)::INT::TEXT, 2, '0') || ':00' AS hour_of_day, COUNT(*) FILTER (WHERE event_type='ARRIVAL') AS arrivals, COUNT(*) FILTER (WHERE event_type='DEPARTURE') AS departures FROM raw.vessel_events WHERE event_timestamp >= date_trunc('day', NOW()) GROUP BY date_part('hour', event_timestamp)::INT ORDER BY date_part('hour', event_timestamp)::INT;",
 					"refId": "A"
 				}
 			],
@@ -400,9 +394,9 @@
 			"options": {
 				"barRadius": 0.1,
 				"groupWidth": 0.7,
+				"xField": "port_name",
 				"legend": { "displayMode": "list", "placement": "bottom" },
-				"tooltip": { "mode": "multi" },
-				"xField": "port_name"
+				"tooltip": { "mode": "multi" }
 			},
 			"targets": [
 				{
@@ -430,7 +424,7 @@
 				{
 					"datasource": { "type": "postgres", "uid": "PostgreSQL" },
 					"format": "table",
-					"rawSql": "SELECT vessel_name, port_code, cargo_type, ROUND(actual_duration_hrs,1) AS \"Actual Hrs\", ROUND(expected_duration_hrs,1) AS \"Expected Hrs\", ROUND(delay_hrs,1) AS \"Delay Hrs\", arrived_at::DATE AS \"Date\" FROM marts.vessel_turnaround WHERE arrived_at >= NOW() - INTERVAL '7 days' AND is_delayed = TRUE AND departed_at IS NOT NULL ORDER BY delay_hrs DESC LIMIT 15;",
+					"rawSql": "SELECT vessel_name AS \"Vessel\", port_code AS \"Port\", cargo_type AS \"Cargo\", ROUND(actual_duration_hrs,1) AS \"Actual Hrs\", ROUND(expected_duration_hrs,1) AS \"Expected Hrs\", ROUND(delay_hrs,1) AS \"Delay Hrs\", arrived_at::DATE AS \"Date\" FROM marts.vessel_turnaround WHERE arrived_at >= NOW() - INTERVAL '7 days' AND is_delayed = TRUE AND departed_at IS NOT NULL ORDER BY delay_hrs DESC LIMIT 15;",
 					"refId": "A"
 				}
 			],

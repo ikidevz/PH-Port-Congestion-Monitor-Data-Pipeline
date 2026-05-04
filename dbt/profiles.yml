@@ -3,10 +3,10 @@ ph_port_monitor:
   outputs:
     dev:
       type: postgres
-      host: "{{ env_var('PG_HOST', 'localhost') }}"
-      port: "{{ env_var('PG_PORT', '5432') | int }}"
-      dbname: "{{ env_var('PG_DB', 'port_monitor') }}"
-      user: "{{ env_var('PG_USER', 'postgres') }}"
-      password: "{{ env_var('PG_PASS', 'postgres') }}"
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      dbname: "{{ env_var('PIPELINE_DB_NAME', 'ph_port_monitor') }}"
+      user: "{{ env_var('POSTGRES_USER', 'port_monitoring_user') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'port_monitoring_password') }}"
       schema: public
       threads: 4

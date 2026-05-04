@@ -1,9 +1,11 @@
 {{
     config(
-        materialized='table',
+        materialized='incremental',
         schema='staging',
         alias='vessel_events',
-        post_hook="UPDATE staging.vessel_events SET dbt_updated_at = NOW()"
+        unique_key='event_id',
+        incremental_strategy='delete+insert',
+        post_hook="UPDATE staging.vessel_events SET dbt_updated_at = NOW() WHERE dbt_updated_at IS NULL"
     )
 }}
 
@@ -67,6 +69,9 @@ cleaned AS (
         AND draft_meters      > 0
         AND expected_duration_hrs > 0
         AND event_timestamp   IS NOT NULL
+        {% if is_incremental() %}
+            AND event_timestamp > (SELECT MAX(event_timestamp) FROM {{ this }})
+        {% endif %}
 )
 
 SELECT * FROM cleaned

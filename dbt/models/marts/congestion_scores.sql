@@ -1,16 +1,10 @@
 {{
     config(
-        materialized='table',
+        materialized='incremental',
         schema='marts',
         alias='congestion_scores',
         unique_key=['port_code', 'score_hour'],
-        post_hook="""
-            DELETE FROM marts.congestion_scores a
-            USING marts.congestion_scores b
-            WHERE a.score_id < b.score_id
-              AND a.port_code  = b.port_code
-              AND a.score_hour = b.score_hour
-        """
+        incremental_strategy='delete+insert'
     )
 }}
 
