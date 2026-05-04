@@ -44,31 +44,23 @@ with DAG(
         """,
     )
 
-    t_dbt_deps = BashOperator(
-        task_id="dbt_deps",
-        bash_command="cd /opt/airflow/dbt && dbt deps --profiles-dir .",
-        env={**os.environ},
-    )
-
     t_dbt_run = BashOperator(
         task_id="dbt_run",
         bash_command="""
-            cd /opt/airflow/dbt && \
-            dbt deps && \
-            dbt run \
-                --profiles-dir . \
-                --select staging+ marts+ \
-                --no-partial-parse
-        """,
+        cd /opt/airflow/dbt && \
+        dbt deps --profiles-dir . && \
+        dbt run \
+            --profiles-dir . \
+            --select staging+ marts+ \
+            --no-partial-parse""",
         env={
-            **os.environ,   # ← FIRST so custom keys below override it
+            **os.environ,
             "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "postgres"),
             "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
             "PIPELINE_DB_NAME": os.getenv("PIPELINE_DB_NAME", "ph_port_monitor"),
             "POSTGRES_USER": os.getenv("POSTGRES_USER", "port_monitoring_user"),
             "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "port_monitoring_password"),
         },
-        doc_md="Runs dbt staging → marts transform chain.",
     )
 
     t_dbt_test = BashOperator(
@@ -99,4 +91,4 @@ with DAG(
         """,
     )
 
-    t_generate >> t_dbt_deps >> t_dbt_run >> t_dbt_test >> t_alert
+    t_generate >> t_dbt_run >> t_dbt_test >> t_alert

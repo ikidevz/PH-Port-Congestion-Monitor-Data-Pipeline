@@ -1,5 +1,5 @@
 name: ph_port_monitor
-version: '1.0.0'
+version: "1.0.0"
 config-version: 2
 
 profile: ph_port_monitor
@@ -19,8 +19,8 @@ clean-targets:
 models:
   ph_port_monitor:
     staging:
-      +materialized: view
+      +materialized: incremental
       +schema: staging
     marts:
-      +materialized: table
+      +materialized: incremental
       +schema: marts

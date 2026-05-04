@@ -32,10 +32,16 @@ WITH port_hours AS (
     FROM {{ source('raw', 'ports') }} p
     CROSS JOIN LATERAL (
         SELECT generate_series(
-            date_trunc('hour', (
-                SELECT MIN(event_timestamp)
-                FROM {{ ref('stg_vessel_events') }}
-            )),
+            {% if is_incremental() %}
+                COALESCE(
+                    (SELECT MAX(score_hour) FROM {{ this }}),
+                    date_trunc('hour', NOW() - INTERVAL '1 hour')
+                ),
+            {% else %}
+                date_trunc('hour', (
+                    SELECT MIN(event_timestamp) FROM {{ ref('stg_vessel_events') }}
+                )),
+            {% endif %}
             date_trunc('hour', NOW()),
             '1 hour'::INTERVAL
         ) AS score_hour

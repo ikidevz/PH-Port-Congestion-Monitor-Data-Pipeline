@@ -1,9 +1,10 @@
 {{
     config(
-        materialized='table',
+        materialized='incremental',
         schema='marts',
         alias='vessel_turnaround',
-        unique_key='turnaround_id'
+        unique_key=['imo_number', 'port_code', 'arrived_at'],
+        incremental_strategy='delete+insert'
     )
 }}
 
@@ -35,6 +36,12 @@ WITH arrivals AS (
         )                                                       AS visit_rank
     FROM {{ ref('stg_vessel_events') }}
     WHERE event_type = 'ARRIVAL'
+    {% if is_incremental() %}
+    AND event_timestamp > COALESCE(
+        (SELECT MAX(arrived_at) FROM {{ this }}),
+        '1970-01-01'::TIMESTAMPTZ
+    )
+    {% endif %}
 ),
 
 departures AS (
