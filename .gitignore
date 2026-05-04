@@ -2,3 +2,9 @@ bin/
 logs/
 __pycache__/
 .env
+
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
+dbt/package-lock.yml
