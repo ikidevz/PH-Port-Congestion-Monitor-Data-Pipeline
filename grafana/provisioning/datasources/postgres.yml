@@ -3,6 +3,7 @@ apiVersion: 1
 datasources:
   - name: PostgreSQL
     type: postgres
+    uid: PostgreSQL
     url: postgres:5432
     database: ph_port_monitor
     user: port_monitoring_user

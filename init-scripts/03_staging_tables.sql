@@ -1,25 +1,25 @@
 \c ph_port_monitor
 
--- ---------------------------------------------------------------------------
--- marts.congestion_scores
--- One row per port per hour. Primary analytics table.
+-- staging.vessel_events
+-- Cleaned, typed, with derived fields. Rebuilt on each dbt run.
 -- ---------------------------------------------------------------------------
 
-CREATE TABLE marts.congestion_scores (
-    score_id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+CREATE TABLE staging.vessel_events (
+    event_id              UUID         PRIMARY KEY,
+    vessel_name           VARCHAR(120) NOT NULL,
+    imo_number            VARCHAR(20)  NOT NULL,
     port_code             VARCHAR(5)   NOT NULL  REFERENCES raw.ports(port_code),
-    score_hour            TIMESTAMPTZ  NOT NULL,
-    berth_capacity        SMALLINT     NOT NULL,
-    active_vessels        INTEGER      NOT NULL DEFAULT 0,
-    arrivals_count        INTEGER      NOT NULL DEFAULT 0,
-    departures_count      INTEGER      NOT NULL DEFAULT 0,
-    avg_wait_hours        NUMERIC(6,2),
-    max_wait_hours        NUMERIC(6,2),
-    berth_utilisation_pct NUMERIC(5,2),                 
-    congestion_score      NUMERIC(5,2) NOT NULL DEFAULT 0
-                            CHECK (congestion_score BETWEEN 0 AND 100),
-    congestion_level      VARCHAR(10)  NOT NULL DEFAULT 'LOW'
-                            CHECK (congestion_level IN ('LOW','MODERATE','HIGH','CRITICAL')),
-    computed_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    UNIQUE (port_code, score_hour)
+    berth_id              SMALLINT     NOT NULL,
+    event_type            VARCHAR(15)  NOT NULL,
+    cargo_type            VARCHAR(20)  NOT NULL,
+    shipping_line         VARCHAR(80),
+    gross_tonnage         INTEGER      NOT NULL,
+    draft_meters          NUMERIC(4,1) NOT NULL,
+    expected_duration_hrs NUMERIC(5,1) NOT NULL,
+    event_date            DATE         NOT NULL,          -- derived: date part of event_timestamp
+    event_hour            SMALLINT     NOT NULL,          -- derived: 0–23 (PH local)
+    is_peak_hour          BOOLEAN      NOT NULL,          -- derived: 06–20 PHT
+    event_timestamp       TIMESTAMPTZ  NOT NULL,
+    ingested_at           TIMESTAMPTZ  NOT NULL,
+    dbt_updated_at        TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
